@@ -4,7 +4,8 @@ Created on Sun Apr  2 17:21:33 2023
 
 @author: wyx
 """
-from ExampleMatrix import *
+from ExampleMatrix import G, E, M, h, bias
+from gurobipy import *
 import numpy as np
 
 MP = Model('MP')
