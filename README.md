@@ -1,4 +1,4 @@
-# two-stage-robust-optimization
+# Two-Stage-Robust-Optimization
 Two stage robust optimization using a column-and-constraint generation (C&amp;CG) method.
 This is an example code for the classical C&CG algorithm for two stage robust optimization, please refer to 
 
