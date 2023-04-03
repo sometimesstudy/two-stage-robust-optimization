@@ -81,8 +81,8 @@ while abs(UB-LB)>=epsilon:
     # update the SP constrs according to the MP solution
     SP.remove(G1)
     SP.remove(G2)
-    SP.addConstr(G@x>=h-M@g_sub-E@np.concatenate([S_y,S_z]),name="G1")
-    SP.addConstr(G@x-h+E@np.concatenate([S_y,S_z])+M@g_sub<=bigM*(1-v),name='G2')
+    G1 = SP.addConstr(G@x>=h-M@g_sub-E@np.concatenate([S_y,S_z]),name="G1")
+    G2 = SP.addConstr(G@x-h+E@np.concatenate([S_y,S_z])+M@g_sub<=bigM*(1-v),name='G2')
     SP.update()
     SP.optimize()
     # obtain the optimal y^{k+1}
