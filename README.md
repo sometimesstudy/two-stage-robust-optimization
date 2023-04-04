@@ -8,4 +8,4 @@ please refer to
 
 for more details
 
-Constrains of the Sub Problem have been transformed into Matrix formulations, but the constrains of the Main Problem haven't, so the code may look a little redundancy. I am now trying to transform all the constrains into Matrix formulations
+All the constrains were transformed into Matrix formulations
