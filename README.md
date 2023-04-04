@@ -6,6 +6,6 @@ please refer to
 
 "Zeng B, Zhao L. Solving two-stage robust optimization problems using a column-and-constraint generation method[J]. Operations Research Letters, 2013, 41(5): 457-461."
 
-for more details
+for more details.
 
-All the constrains were transformed into Matrix formulations
+All the constrains were transformed into Matrix formulations.
