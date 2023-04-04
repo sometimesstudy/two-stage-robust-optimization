@@ -67,11 +67,11 @@ while abs(UB-LB)>=epsilon:
     SP.remove(G2)
     G1 = SP.addConstr(G@x>=h-M@g-E@np.concatenate([y.x,z.x]),name="G1")
     G2 = SP.addConstr(G@x-h+E@np.concatenate([y.x,z.x])+M@g<=bigM*(1-v),name='G2')
-    SP.update()
     SP.optimize()
     # obtain the optimal y^{k+1}
     SP_obj = SP.ObjVal
-    UB = min(UB, c@y.x+a@z.x+eta.x)
+    UB = min(UB, c@y.x+a@z.x+SP_obj)
+    
     k += 1
     # go back to the MP
     print("经过{}次迭代".format(k))
