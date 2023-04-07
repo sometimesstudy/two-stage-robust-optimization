@@ -1,99 +1,84 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr  2 17:21:33 2023
+
+@author: wyx
+"""
+from ExampleMatrix import Ay, by, G, E, M, h, bias
 from gurobipy import *
 import numpy as np
 
-# Constant creation
-f = [400, 414, 326]
-a = [18, 25, 20]
-C = [[22, 33, 24],
-     [33, 23, 30],
-     [20, 25, 27], ]
-D = [206 + 40, 274 + 40, 220 + 40]
-dl = [206, 274, 220]
-du = [40, 40, 40]
-k = 0  # Iterative counting
+MP = Model('MP')
 
-# Create model
-MP = Model()  # Master-problem
-SP = Model()  # Sub-problem(KKT)
-SDSP = Model()  # Sub-problem (strong duality)
-# Construction of Master-problem
-# addVars
-y = MP.addVars(len(f), lb=0, ub=1, obj=f, vtype=GRB.INTEGER, name='y')
-z = MP.addVars(len(a), lb=0, obj=a, vtype=GRB.CONTINUOUS, name='z')
-g = MP.addVars(3, lb=0, ub=1.0, name='g')
-η = MP.addVar(obj=1.0, name='η')
+# construct main problem
+c = np.array([400, 414, 326])
+a = np.array([18, 25, 20])
+b = np.array([22, 33, 24, 33, 23, 30, 20, 25, 27])
+bigM = 10**3
+LB = -GRB.INFINITY
+UB = GRB.INFINITY
+epsilon = 1e-5
+k = 1
+u = []
+l = []
+y = MP.addMVar((3,), obj=c, vtype=GRB.BINARY)
+z = MP.addMVar((3,), obj=a, vtype=GRB.CONTINUOUS)
+d = MP.addMVar((3,), lb=0, name='d')
+eta = MP.addMVar((1,), obj=1, vtype=GRB.CONTINUOUS)
 
-# addConstrs
-Column1 = MP.addConstrs((z[i] <= 800 * y[i] for i in range(3)), name='column1')
-Column4 = MP.addConstr(quicksum(z[i] for i in range(3)) >= 772, name='z')
-Column5 = MP.addConstr(quicksum(g[i] for i in range(2)) <= 1.2, name='column5')
-Column6 = MP.addConstr(quicksum(g[i] for i in range(3)) <= 1.8, name='column6')
+# construct the MP
+MP.addConstr(Ay[:, :3]@y+Ay[:, 3:]@z >= by)
+MP.optimize()
+MP_obj = MP.ObjVal
+LB = max(MP_obj, LB)
 
-# MP.write("MP.lp")  # model print and visual inspection model,can open it with Notepad++
-MP.optimize()  # Solve Model
-LB = MP.objval  # get optimum value of model
-# 添加变量
-Mx = np.zeros((3, 3))
-Mλ = np.zeros((3))
-Mπ = np.zeros((3))
-for i in range(3):
-    for j in range(3):
-        Mx[i][j] = min(D[j], z[i].x)
-        Mλ[i] = max(C[i][0], C[i][1], C[i][2])
-        Mπ[i] = max(C[0][i], C[1][i], C[2][i])
-# 子问题求解kkt
-x = SP.addVars(3, 3, lb=0, obj=np.array(C) * -1, vtype=GRB.CONTINUOUS, name='x')
-g = SP.addVars(3, lb=0, ub=1.0, name='g')
-d = [206 + 40 * g[0], 274 + 40 * g[1], 220 + 40 * g[2]]
-α = SP.addVars(3, 3, vtype=GRB.BINARY, name='α')
-β = SP.addVars(3, vtype=GRB.BINARY, name='β')
-γ = SP.addVars(3, vtype=GRB.BINARY, name='γ')
-λ = SP.addVars(3, vtype=GRB.CONTINUOUS, name='λ')
-π = SP.addVars(3, vtype=GRB.CONTINUOUS, name='π')
-A = [252, 0, 520]
-S1 = SP.addConstrs(((quicksum(x[i, j] for j in range(3))) <= z[i].x for i in range(3)), name='SPcolumn1') #0:3
-S2 = SP.addConstrs(((quicksum(x[i, j] for i in range(3))) >= d[j] for j in range(3)), name='SPcolumn2') #3:6
-S3 = SP.addConstrs(((λ[j] - π[i]) <= C[i][j] for i in range(3) for j in range(3)), name='SPcolumn3') #6:15
-S4 = SP.addConstrs((Mx[i][j] * α[i, j] >= x[i, j] for i in range(3) for j in range(3)), name='SPcolumn4') #15:24
-S5 = SP.addConstrs(
-    ((C[i][j] - λ[j] + π[i]) <= (C[i][j] + Mπ[i]) * (1 - α[i, j]) for i in range(3) for j in range(3)),
-    name='SPcolumn5') #24:32
-S6 = SP.addConstrs((λ[j] <= Mλ[j] * β[j] for j in range(3)), name='SPcolumn6') #32:35
-S7 = SP.addConstrs(((quicksum(x[i, j] for i in range(3)) - d[j]) <= 40 * (1 - β[j]) for j in range(3)),
-                   name='SPcolumn7') #35:44
-S8 = SP.addConstrs((π[i] <= Mπ[i] * γ[i] for i in range(3)), name='SPcolumn8')
-S9 = SP.addConstrs(((z[i].x - quicksum(x[i, j] for j in range(3))) <= (1 - γ[i]) * z[i].x for i in range(3)),
-                   name='SPcolumn9')
-SP.addConstr(quicksum(g[i] for i in range(2)) <= 1.2, name='SP10')
-SP.addConstr(quicksum(g[i] for i in range(3)) <= 1.8, name='SP11')
-SP.write("SP.lp")
+SP = Model('SP')
+x = SP.addMVar((9,), vtype=GRB.CONTINUOUS, name='x')
+pi = SP.addMVar(G.shape[0], vtype=GRB.CONTINUOUS, name='pi')
+g = SP.addMVar((3,), ub=1, vtype=GRB.CONTINUOUS, name='g')
+v = SP.addMVar((G.shape[0],), vtype=GRB.BINARY, name='v')
+w = SP.addMVar((G.shape[1],), vtype=GRB.BINARY, name='w')
+
+G1 = SP.addConstr(G@x >= h-M@g-E@np.concatenate([y.x, z.x]), name="G1")
+SP.addConstr(G.T@pi <= b, name='pi')
+SP.addConstr(pi <= bigM*v, name='v')
+G2 = SP.addConstr(
+    G@x-h+E@np.concatenate([y.x, z.x])+M@g <= bigM*(1-v), name='G2')
+SP.addConstr(x <= bigM*w, name='w1')
+SP.addConstr(b-G.T@pi <= bigM*(1-w), name='w2')
+SP.addConstr(g[:2].sum() <= 1.2, name='g1')
+SP.addConstr(g.sum() <= 1.8, name='g2')
+SP.setObjective(b@x, GRB.MAXIMIZE)
 SP.optimize()
-d = [dl[i] + du[i] * g[i].x for i in range(3)]
-Q = SP.objval
-UB = LB - η.x - Q
-while UB - LB > 10e-4:
-    xx = MP.addVars(3, 3, lb=0, vtype=GRB.CONTINUOUS, name='x')
-    Column2 = MP.addConstrs(((quicksum(xx[i, j] for j in range(3))) <= z[i] for i in range(3)), name='column2')
-    Column3 = MP.addConstrs(((quicksum(xx[i, j] for i in range(3))) >= d[j] for j in range(3)), name='column3')
-    Column7 = MP.addConstr(quicksum(C[i][j] * xx[i, j] for i in range(3) for j in range(3)) <= η)
+SP_obj = SP.ObjVal
+UB = min(UB, c@y.x+a@z.x+SP_obj)
+MP.reset()
+while abs(UB-LB) >= epsilon:
+    # add x^{k+1}
+    x_new = MP.addMVar((9,), vtype=GRB.CONTINUOUS)
+    # eta>=bTx^{k+1}
+    MP.addConstr(eta >= (h-E[:, :3]@y-E[:, 3:]@z-M@g.x)@pi.x)
+    # Ey+Gx^{k+1}>=h-Mu_{k+1}
+    # MP.addConstr(E[:,:3]@y+E[:,3:]@z+G@x_new>=h-M@g.x)
     MP.optimize()
-    LB = MP.objval
-    SP.remove(SP.getConstrs()[0:6])
-    SP.remove(SP.getConstrs()[15:23])
-    SP.remove(SP.getConstrs()[36:39])
-    SP.remove(SP.getConstrs()[42:45])
-    S1 = SP.addConstrs(((quicksum(x[i, j] for j in range(3))) <= z[i].x for i in range(3)), name='SPcolumn1')
-    S2 = SP.addConstrs(((quicksum(x[i, j] for i in range(3))) >= d[j] for j in range(3)), name='SPcolumn2')
-    S7 = SP.addConstrs(((quicksum(x[i, j] for i in range(3)) - d[j]) <= 40 * (1 - β[j]) for j in range(3)),
-                       name='SPcolumn7')
-    S9 = SP.addConstrs(((z[i].x - quicksum(x[i, j] for j in range(3))) <= (1 - γ[i]) * z[i].x for i in range(3)),
-                       name='SPcolumn9')
-    for i in range(3):
-        for j in range(3):
-            Mx[i][j] = min(D[j], z[i].x)
-    S4 = SP.addConstrs((Mx[i][j] * α[i, j] >= x[i, j] for i in range(3) for j in range(3)), name='SPcolumn4')
-    SP.write('SP.lp')
+    SP.reset()
+    LB = max(LB, MP.objval)
+    # update the SP constrs according to the MP solution
+    SP.remove(G1)
+    SP.remove(G2)
+    G1 = SP.addConstr(G@x >= h-M@g-E@np.concatenate([y.x, z.x]), name="G1")
+    G2 = SP.addConstr(
+        G@x-h+E@np.concatenate([y.x, z.x])+M@g <= bigM*(1-v), name='G2')
+
     SP.optimize()
-    UB = LB - η.x - SP.objval
-    k = k + 1
-print(LB)
+    # obtain the optimal y^{k+1}
+    SP_obj = SP.ObjVal
+    UB = min(UB, c@y.x+a@z.x+SP_obj)
+    MP.reset()
+    k += 1
+    u.append(UB)
+    l.append(LB)
+    # go back to the MP
+    print("经过{}次迭代".format(k))
+    print("上界为：{}".format(UB))
+    print("下界为：{}".format(LB))
