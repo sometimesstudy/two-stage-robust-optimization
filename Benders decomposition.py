@@ -67,9 +67,7 @@ while abs(UB-LB) >= epsilon:
     SP.remove(G1)
     SP.remove(G2)
     G1 = SP.addConstr(G@x >= h-M@g-E@np.concatenate([y.x, z.x]), name="G1")
-    G2 = SP.addConstr(
-        G@x-h+E@np.concatenate([y.x, z.x])+M@g <= bigM*(1-v), name='G2')
-
+    G2 = SP.addConstr(G@x-h+E@np.concatenate([y.x, z.x])+M@g <= bigM*(1-v), name='G2')
     SP.optimize()
     # obtain the optimal y^{k+1}
     SP_obj = SP.ObjVal
