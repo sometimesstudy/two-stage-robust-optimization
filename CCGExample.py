@@ -3,7 +3,7 @@
 Created on Sun Apr  2 17:21:33 2023
 @author: wyx
 """
-from ExampleMatrix import Ay, by, G, E, M, h, bias
+from ExampleMatrix import Ay, by, G, E, M, h
 from gurobipy import *
 import numpy as np
 
@@ -53,16 +53,21 @@ SP_obj = SP.ObjVal
 UB = min(UB, c@y.x+a@z.x+SP_obj)
 MP.reset()
 while abs(UB-LB) >= epsilon:
-    # add x^{k+1}
-    x_new = MP.addMVar((9,), vtype=GRB.CONTINUOUS)
-    # eta>=bTx^{k+1}
-    MP.addConstr(eta >= b.T@x_new)
-    # Ey+Gx^{k+1}>=h-Mu_{k+1}
-    MP.addConstr(E[:, :3]@y+E[:, 3:]@z+G@x_new >= h-M@g.x)
-    SP.reset()
-    MP.optimize()
-    LB = max(LB, MP.objval)
-
+    if SP_obj < GRB.INFINITY:
+        MP.reset()
+        # add x^{k+1}
+        x_new = MP.addMVar((9,), vtype=GRB.CONTINUOUS)
+        # eta>=bTx^{k+1}
+        MP.addConstr(eta >= b.T@x_new)
+        # Ey+Gx^{k+1}>=h-Mu_{k+1}
+        MP.addConstr(E[:, :3]@y+E[:, 3:]@z+G@x_new >= h-M@g.x)
+        SP.reset()
+        MP.optimize()
+        SP_obj = MP.objval
+        LB = max(LB, SP_obj)
+    else:
+        x_new = MP.addMVar((9,), vtype=GRB.CONTINUOUS)
+        MP.addConstr(E[:, :3]@y+E[:, 3:]@z+G@x_new >= h-M@g.x)
     # update the SP constrs according to the MP solution
     SP.remove(G1)
     SP.remove(G2)
@@ -73,7 +78,6 @@ while abs(UB-LB) >= epsilon:
     # obtain the optimal y^{k+1}
     SP_obj = SP.ObjVal
     UB = min(UB, c@y.x+a@z.x+SP_obj)
-    MP.reset()
     k += 1
     # go back to the MP
     print("经过{}次迭代".format(k))
