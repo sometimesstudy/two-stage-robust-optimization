@@ -9,3 +9,25 @@ please refer to
 for more details.
 
 All the constrains were transformed into Matrix formulations.
+
+C&CG iteration process
+
+| interations   | LB  |UB|
+|  ---- | ----  |----  |
+| 1  | 14296 | 35238 |
+| 2  | 33680 | 33680 |
+Benders decomposition iteration process
+
+| interations   | LB  |UB|
+|  ---- | ----  |----  |
+| 1  | 14296 | 35238 |
+| 2  | 14665 | 35238 |
+| 3  | 14860 | 35238 |
+| 4  | 15227 | 35238 |
+| 5  | 30532 | 34556 |
+| 6  | 30956 | 34556 |
+| 7  | 30958 | 34556 |
+| 8  | 31383 | 34556 |
+| 9  | 33127 | 33680 |
+| 10  | 33543 | 33680 |
+| 11  | 33680 | 33680 |
