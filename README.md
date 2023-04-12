@@ -1,5 +1,5 @@
 # Two-Stage-Robust-Optimization
-Two stage robust optimization using a column-and-constraint generation (C&amp;CG) method.
+Two stage robust optimization using a column-and-constraint generation (C&amp;CG) method and Benders Decomposition.
 This is an example code for the classical C&CG algorithm for two stage robust optimization, which is programmed by original Python Gurobi solver.
 
 please refer to 
