@@ -16,6 +16,7 @@ C&CG iteration process
 |  ---- | ----  |----  |
 | 1  | 14296 | 35238 |
 | 2  | 33680 | 33680 |
+
 Benders decomposition iteration process
 
 | interations   | LB  |UB|
