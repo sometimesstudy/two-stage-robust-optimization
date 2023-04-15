@@ -63,8 +63,8 @@ while abs(UB-LB) >= epsilon:
         MP.addConstr(E[:, :3]@y+E[:, 3:]@z+G@x_new >= h-M@g.x)
         SP.reset()
         MP.optimize()
-        SP_obj = MP.objval
-        LB = max(LB, SP_obj)
+        MP_obj = MP.objval
+        LB = max(LB, MP_obj)
     else:
         x_new = MP.addMVar((9,), vtype=GRB.CONTINUOUS)
         MP.addConstr(E[:, :3]@y+E[:, 3:]@z+G@x_new >= h-M@g.x)
