@@ -5,6 +5,8 @@ Created on Sun Apr  2 17:21:33 2023
 """
 from gurobipy import *
 import numpy as np
+
+# Parameters
 Ay = array([[800.,   0.,   0.,  -1.,   0.,   0.],
        [  0., 800.,   0.,   0.,  -1.,   0.],
        [  0.,   0., 800.,   0.,   0.,  -1.],
@@ -29,6 +31,7 @@ array([[  0.,   0.,   0.],
        [  0., -40.,   0.],
        [  0.,   0., -40.]])
 h = array([  0.,   0.,   0., 206., 274., 220.])
+
 MP = Model('MP')
 
 # construct main problem
