@@ -8,7 +8,7 @@ please refer to
 
 for more details.
 
-All the constrains were transformed into Matrix formulations.
+All the constraints were transformed into Matrix formulations.
 
 C&CG iteration process
 
